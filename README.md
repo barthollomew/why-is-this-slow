@@ -1,6 +1,6 @@
-# why-is-this-slow
+# Why is this slow?
 
-why-is-this-slow is a small Go CLI that runs a command, records timing and resource facts, and keeps them so you can explain or compare later.
+A small Go CLI that runs a command, records timing and resource facts, and keeps them so you can explain or compare later.
 
 ## Details
 - What it is: lightweight timer with repeat mode for stable medians; captures child CPU (user+sys) time and max RSS via rusage when supported; stores every run under an OS-appropriate state directory for later explain and compare.
