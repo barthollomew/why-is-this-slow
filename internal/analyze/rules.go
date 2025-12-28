@@ -120,10 +120,25 @@ func CompareAnalysis(a, b model.RunResult) model.Analysis {
 		},
 	})
 
-	analysis.Explanations = append(analysis.Explanations, compareMemory(a, b)...)
-	analysis.Explanations = append(analysis.Explanations, compareCPU(a, b)...)
-	analysis.Explanations = append(analysis.Explanations, memoryPressure(b)...)
-	analysis.Explanations = append(analysis.Explanations, highSysTime(b)...)
+	memDelta := compareMemory(a, b)
+	cpuDelta := compareCPU(a, b)
+	memRun := memoryPressure(b)
+	sysRun := highSysTime(b)
+
+	analysis.Explanations = append(analysis.Explanations, memDelta...)
+	analysis.Explanations = append(analysis.Explanations, cpuDelta...)
+	analysis.Explanations = append(analysis.Explanations, memRun...)
+	analysis.Explanations = append(analysis.Explanations, sysRun...)
+
+	if len(memDelta) > 0 {
+		analysis.Notes = append(analysis.Notes, "MEMORY_PRESSURE triggered by delta between runs")
+	}
+	if len(memRun) > 0 {
+		analysis.Notes = append(analysis.Notes, "MEMORY_PRESSURE triggered for run B")
+	}
+	if len(sysRun) > 0 {
+		analysis.Notes = append(analysis.Notes, fmt.Sprintf("HIGH_SYS_TIME triggered for run %s", b.ID))
+	}
 	analysis.Notes = append(analysis.Notes, rssUnitNote(b))
 
 	return analysis
