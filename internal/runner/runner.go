@@ -25,7 +25,7 @@ type Options struct {
 	Repeat  int
 }
 
-// Execute runs the command N times (N>=1), capturing timing and resource usage.
+// execute runs the command n times and captures timing and usage.
 func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 	if len(opts.Command) == 0 {
 		return model.RunResult{}, errors.New("no command provided")
@@ -65,8 +65,10 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 		if tail != "" {
 			stderrTail = tail
 		}
-		exitCode = sample.ExitCode
-		signal = sample.Signal
+		if sample.ExitCode != 0 {
+			exitCode = sample.ExitCode
+			signal = sample.Signal
+		}
 		if sample.MaxRSS > maxRSS {
 			maxRSS = sample.MaxRSS
 			maxRSSUnit = sample.MaxRSSUnit
@@ -115,7 +117,7 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 
 	run.RawSamples = samples
 
-	// If only a single run, prefer actual measured wall time.
+	// single run uses the actual wall time.
 	if opts.Repeat == 1 {
 		run.WallMS = wallForAggregate
 		run.CPURatio = cpuForAggregate
