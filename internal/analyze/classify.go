@@ -26,13 +26,16 @@ func Classify(cpuRatio float64) string {
 	}
 }
 
-// AnalyzeRun builds a model.Analysis with simple heuristics.
+// analyze run builds simple heuristics.
 func AnalyzeRun(run model.RunResult) model.Analysis {
 	analysis := model.Analysis{
 		Classification: Classify(run.CPURatio),
 	}
 
 	analysis.Explanations = append(analysis.Explanations, baseExplanation(run, analysis.Classification))
+
+	ioExpl := ioWait(run)
+	analysis.Explanations = append(analysis.Explanations, ioExpl...)
 
 	sysExpl := highSysTime(run)
 	if len(sysExpl) > 0 {
