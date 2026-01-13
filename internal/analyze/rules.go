@@ -3,6 +3,7 @@ package analyze
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/barthollomew/why-is-this-slow/internal/model"
 )
@@ -57,6 +58,36 @@ func highSysTime(run model.RunResult) []model.Explanation {
 	}
 }
 
+func ioWait(run model.RunResult) []model.Explanation {
+	if run.WallMS <= 0 {
+		return nil
+	}
+	if run.CPURatio >= 0.35 {
+		return nil
+	}
+	if !platformSupportsUsage(run.Platform) {
+		return nil
+	}
+
+	waitMS, waitRatio := waitStats(run)
+	if waitMS <= 0 {
+		return nil
+	}
+
+	return []model.Explanation{
+		{
+			ID:       "HIGH_IO_WAIT",
+			Severity: "warn",
+			Message:  fmt.Sprintf("High wait time (~%.0f%% of wall)", waitRatio*100),
+			Details:  fmt.Sprintf("wait_ms=%.1f wall_ms=%.1f cpu_ratio=%.2f", waitMS, run.WallMS, run.CPURatio),
+			Suggestions: []string{
+				"Check for disk/network latency, lock contention, or sleeps",
+				"Use tracing (strace/dtruss) if the wait is unexpected",
+			},
+		},
+	}
+}
+
 func memoryPressure(run model.RunResult) []model.Explanation {
 	threshold := memoryThreshold()
 	if threshold <= 0 {
@@ -104,7 +135,30 @@ func rssUnitNote(run model.RunResult) string {
 	return fmt.Sprintf("max_rss unit for %s: %s", runtime.GOOS, unit)
 }
 
-// CompareAnalysis generates explanations based on two runs.
+func waitStats(run model.RunResult) (float64, float64) {
+	waitMS := run.WallMS - (run.UserMS + run.SysMS)
+	if waitMS < 0 {
+		waitMS = 0
+	}
+	waitRatio := 0.0
+	if run.WallMS > 0 {
+		waitRatio = waitMS / run.WallMS
+	}
+	return waitMS, waitRatio
+}
+
+func platformSupportsUsage(platform string) bool {
+	osName := platform
+	if osName == "" {
+		osName = runtime.GOOS
+	}
+	if idx := strings.IndexByte(osName, '/'); idx != -1 {
+		osName = osName[:idx]
+	}
+	return osName == "linux" || osName == "darwin"
+}
+
+// compare analysis explains two runs.
 func CompareAnalysis(a, b model.RunResult) model.Analysis {
 	analysis := model.Analysis{
 		Classification: Classify(b.CPURatio),
@@ -121,15 +175,20 @@ func CompareAnalysis(a, b model.RunResult) model.Analysis {
 	})
 
 	memDelta := compareMemory(a, b)
+	wallDelta := compareWall(a, b)
 	cpuDelta := compareCPU(a, b)
 	memRun := memoryPressure(b)
 	sysRun := highSysTime(b)
 
+	analysis.Explanations = append(analysis.Explanations, wallDelta...)
 	analysis.Explanations = append(analysis.Explanations, memDelta...)
 	analysis.Explanations = append(analysis.Explanations, cpuDelta...)
 	analysis.Explanations = append(analysis.Explanations, memRun...)
 	analysis.Explanations = append(analysis.Explanations, sysRun...)
 
+	if len(wallDelta) > 0 {
+		analysis.Notes = append(analysis.Notes, fmt.Sprintf("WALL_TIME_REGRESSION triggered for run %s", b.ID))
+	}
 	if len(memDelta) > 0 {
 		analysis.Notes = append(analysis.Notes, "MEMORY_PRESSURE triggered by delta between runs")
 	}
@@ -162,6 +221,41 @@ func compareMemory(a, b model.RunResult) []model.Explanation {
 			Suggestions: []string{
 				"Check for new caches or data growth between runs",
 				"Profile allocations or compare inputs to explain the jump",
+			},
+		},
+	}
+}
+
+func compareWall(a, b model.RunResult) []model.Explanation {
+	if a.WallMS <= 0 || b.WallMS <= 0 {
+		return nil
+	}
+	delta := b.WallMS - a.WallMS
+	if delta <= 0 {
+		return nil
+	}
+	rel := delta / a.WallMS
+	const (
+		relThreshold = 0.15
+		absThreshold = 50.0
+		minDelta     = 10.0
+	)
+	if delta < minDelta {
+		return nil
+	}
+	if rel < relThreshold && delta < absThreshold {
+		return nil
+	}
+
+	return []model.Explanation{
+		{
+			ID:       "WALL_TIME_REGRESSION",
+			Severity: "warn",
+			Message:  fmt.Sprintf("Wall time increased %.0f%% (%.1fms -> %.1fms)", rel*100, a.WallMS, b.WallMS),
+			Details:  fmt.Sprintf("delta_ms=%.1f wall_a=%.1f wall_b=%.1f", delta, a.WallMS, b.WallMS),
+			Suggestions: []string{
+				"Re-run with --repeat for stability",
+				"Compare inputs, environment, and recent changes",
 			},
 		},
 	}

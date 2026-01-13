@@ -17,6 +17,20 @@ func TestHighSysTimeRule(t *testing.T) {
 	}
 }
 
+func TestIOWaitRule(t *testing.T) {
+	run := model.RunResult{
+		WallMS:   1000,
+		UserMS:   10,
+		SysMS:    10,
+		CPURatio: 0.02,
+		Platform: "linux/amd64",
+	}
+	expl := ioWait(run)
+	if len(expl) == 0 {
+		t.Fatalf("expected io wait explanation")
+	}
+}
+
 func TestMemoryPressureRule(t *testing.T) {
 	thr := memoryThreshold()
 	if thr == 0 {
@@ -38,5 +52,14 @@ func TestCompareMemoryIncrease(t *testing.T) {
 	expl := compareMemory(a, b)
 	if len(expl) == 0 {
 		t.Fatalf("expected memory increase explanation")
+	}
+}
+
+func TestCompareWallRegression(t *testing.T) {
+	a := model.RunResult{ID: "a", WallMS: 100}
+	b := model.RunResult{ID: "b", WallMS: 140}
+	expl := compareWall(a, b)
+	if len(expl) == 0 {
+		t.Fatalf("expected wall regression explanation")
 	}
 }
