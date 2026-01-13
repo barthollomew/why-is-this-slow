@@ -10,6 +10,7 @@ This exists for the very common situation where something feels slow and you wan
   - A lightweight runner with optional repeat mode for more stable numbers.
   - Captures wall time, child CPU time (user + sys), and max RSS via `rusage` where available.
   - Stores every run under a per-OS state directory so you can explain or compare later.
+  - Compares runs to flag wall-time regressions and resource shifts.
 
 - It is not:
   - A profiler or tracer.
@@ -69,10 +70,10 @@ CPU: user 0.0ms sys 0.0ms cpu_ratio 0.00
 Max RSS: 0 unknown (linux/amd64)
 Exit: code=0
 Classification: WAIT_IO_BOUND
-Top insight: BASELINE - Likely waiting on I/O or sleeps
+Top insight: HIGH_IO_WAIT - High wait time (~100% of wall)
 Suggestions:
-  - Check whether the command is expected to wait
-  - Add tracing if the wait is unexpected
+  - Check for disk/network latency, lock contention, or sleeps
+  - Use tracing (strace/dtruss) if the wait is unexpected
 Run ID: 20240101T120000Z-1a2b3c4d
 Stored at: ~/.local/state/why-is-this-slow/runs/20240101T120000Z-1a2b3c4d.json
 ```
