@@ -55,11 +55,14 @@ func (s *Store) Load(id string) (model.RunResult, model.Analysis, error) {
 	path := s.RunPath(id)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return model.RunResult{}, model.Analysis{}, err
+		if os.IsNotExist(err) {
+			return model.RunResult{}, model.Analysis{}, fmt.Errorf("run id %q not found at %s: %w", id, path, err)
+		}
+		return model.RunResult{}, model.Analysis{}, fmt.Errorf("read run %q: %w", id, err)
 	}
 	var rec model.Record
 	if err := json.Unmarshal(data, &rec); err != nil {
-		return model.RunResult{}, model.Analysis{}, err
+		return model.RunResult{}, model.Analysis{}, fmt.Errorf("parse run %q: %w", id, err)
 	}
 	rec.Run.StoragePath = path
 	return rec.Run, rec.Analysis, nil
