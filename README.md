@@ -20,7 +20,7 @@ Run ID: 20240101T120000Z-1a2b3c4d
 Stored at: ~/.local/state/why-is-this-slow/runs/20240101T120000Z-1a2b3c4d.json
 ```
 
-### What it is (and isn’t)
+### What it is (and isn't)
 
 - It is:
   - A lightweight runner with optional repeat mode for more stable numbers.
@@ -53,10 +53,10 @@ Defaults are boring on purpose:
   - Deep syscall detail.
   - Heavyweight and noisy.
 - perf:
-  - Superr powerful.
+  - Super powerful.
   - Overkill when you just want to know if you are waiting or burning CPU.
 
-why-is-this-slow sits between “stopwatch” and “profiler” and tries to answer: what kind of slow is this?
+why-is-this-slow sits between "stopwatch" and "profiler" and tries to answer: what kind of slow is this?
 
 ### Install
 
@@ -100,8 +100,8 @@ why-is-this-slow compare [--json] <run_id_a> <run_id_b>
 
 - `cpu_ratio = (user_ms + sys_ms) / wall_ms`
 - `< 0.35` WAIT_IO_BOUND: mostly sleeping, waiting on I/O, or blocked on locks.
-- `0.35–0.75` MIXED: some CPU, some waiting.
-- `0.75–1.0` CPU_BOUND: mostly burning CPU.
+- `0.35-0.75` MIXED: some CPU, some waiting.
+- `0.75-1.0` CPU_BOUND: mostly burning CPU.
 - `> 1.0` PARALLEL_CPU: CPU time exceeds wall time (multiple cores or processes).
 
 ### RSS units and limits
