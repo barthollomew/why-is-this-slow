@@ -4,7 +4,7 @@ A small Go CLI that runs a command, records how long it took and what the system
 
 This exists for the very common situation where something feels slow and you want evidence before guessing.
 
-Example output:
+Example run output:
 ```
 Command: sleep 0.1
 Wall: median 101.2ms p90 105.4ms (n=3)
@@ -18,6 +18,20 @@ Suggestions:
   - Use tracing (strace/dtruss) if the wait is unexpected
 Run ID: 20240101T120000Z-1a2b3c4d
 Stored at: ~/.local/state/why-is-this-slow/runs/20240101T120000Z-1a2b3c4d.json
+```
+
+Example comparison output (`why-is-this-slow compare <run_a> <run_b>`):
+```
+Compare 20240101T120000Z-1a2b3c4d -> 20240101T120500Z-5e6f7g8h
+A cmd: go test ./...
+B cmd: go test ./...
+A: wall 1500.0ms cpu_ratio 0.85 max_rss 45000 kilobytes exit 0
+B: wall 3200.0ms cpu_ratio 0.40 max_rss 95000 kilobytes exit 0
+Classification (B): MIXED
+Top insight: WALL_REGRESSION - Wall time increased by 113.3% (1500.0ms -> 3200.0ms)
+Suggestions:
+  - Check recent code changes or increased test load for regression
+  - Compare CPU time and memory usage between runs
 ```
 
 ### What it is (and isn't)
