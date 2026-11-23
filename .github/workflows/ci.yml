@@ -12,4 +12,5 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
-      - run: go test ./...
+      - run: go test -v ./...
+      - run: go build -v ./cmd/why-is-this-slow

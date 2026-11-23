@@ -38,6 +38,15 @@ Defaults are boring on purpose:
 - Only the last 64KB of stderr is kept in memory.
 - Non-zero exits are recorded and returned.
 
+### Architecture
+
+The system is split into clear packages under `internal`:
+
+- `internal/runner`: Executes commands, measures wall clock time, captures user and system CPU time from `rusage`, tracks max RSS, and buffers up to 64KB of stderr tail.
+- `internal/stats`: Computes median and p90 percentile statistics across repeat runs using a sorted percentile algorithm.
+- `internal/analyze`: Classifies runs into `WAIT_IO_BOUND`, `MIXED`, `CPU_BOUND`, or `PARALLEL_CPU` based on cpu ratio, generates plain text insights and suggestions, and flags performance regressions between runs.
+- `internal/store`: Persists run records and analysis metadata as formatted JSON files in the user state directory.
+
 ### How it compares
 
 - hyperfine:
@@ -56,7 +65,7 @@ Defaults are boring on purpose:
   - Super powerful.
   - Overkill when you just want to know if you are waiting or burning CPU.
 
-why-is-this-slow sits between "stopwatch" and "profiler" and tries to answer: what kind of slow is this?
+why-is-this-slow sits between stopwatch and profiler and tries to answer what kind of slow is this.
 
 ### Install
 
@@ -95,6 +104,14 @@ why-is-this-slow compare [--json] <run_id_a> <run_id_b>
   why-is-this-slow compare <id_a> <id_b>
   ```
 - Add `--json` to any command for machine-readable output.
+
+### Tests
+
+To run the test suite and verify package correctness, run:
+
+```sh
+go test -v ./...
+```
 
 ### Interpreting `cpu_ratio`
 

@@ -1,5 +1,6 @@
 *.exe
 *.out
-why-is-this-slow
+/why-is-this-slow
 coverage.*
 bin/
+CLAUDE.md
