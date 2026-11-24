@@ -5,13 +5,10 @@ import (
 	"sort"
 )
 
-// Median returns the 50th percentile using a sorted copy.
 func Median(values []float64) float64 {
 	return Percentile(values, 50)
 }
 
-// Percentile uses the nearest-rank method with 0-based index interpolation.
-// For small N this keeps behavior predictable and easy to reason about.
 func Percentile(values []float64, p float64) float64 {
 	if len(values) == 0 {
 		return 0

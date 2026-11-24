@@ -5,13 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 
 	"github.com/barthollomew/why-is-this-slow/internal/store"
 )
 
-// Command is a lightweight subcommand wrapper.
 type Command struct {
 	Name    string
 	Summary string
@@ -19,7 +17,6 @@ type Command struct {
 	Run     func(ctx context.Context, args []string) (int, error)
 }
 
-// Execute dispatches to subcommands. Default action is to show help.
 func Execute(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	st, err := store.New()
 	if err != nil {
@@ -81,5 +78,4 @@ func printHelp(out io.Writer, cmds []*Command) {
 	}
 
 	fmt.Fprintf(out, "\nUse \"why-is-this-slow <command> --help\" for details.\n")
-	os.Stderr.Sync()
 }

@@ -26,7 +26,6 @@ func Classify(cpuRatio float64) string {
 	}
 }
 
-// analyze run builds simple heuristics.
 func AnalyzeRun(run model.RunResult) model.Analysis {
 	analysis := model.Analysis{
 		Classification: Classify(run.CPURatio),
