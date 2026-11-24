@@ -158,7 +158,6 @@ func platformSupportsUsage(platform string) bool {
 	return osName == "linux" || osName == "darwin"
 }
 
-// compare analysis explains two runs.
 func CompareAnalysis(a, b model.RunResult) model.Analysis {
 	analysis := model.Analysis{
 		Classification: Classify(b.CPURatio),

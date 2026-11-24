@@ -8,8 +8,7 @@ import (
 	"syscall"
 )
 
-// childUsage extracts usage stats from a completed process using rusage.
-// ru_maxrss units differ by platform: on Linux it is in kilobytes, on macOS bytes.
+// ru_maxrss units differ by platform: kilobytes on Linux, bytes on macOS.
 func childUsage(ps *os.ProcessState) (Usage, bool) {
 	ru, ok := ps.SysUsage().(*syscall.Rusage)
 	if !ok || ru == nil {

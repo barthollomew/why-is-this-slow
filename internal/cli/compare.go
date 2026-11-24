@@ -30,17 +30,14 @@ func NewCompareCommand(st *store.Store, stdout io.Writer) *Command {
 				return 1, fmt.Errorf("two run ids are required")
 			}
 
-			runA, analysisA, err := st.Load(args[0])
+			runA, _, err := st.Load(args[0])
 			if err != nil {
 				return 1, err
 			}
-			runB, analysisB, err := st.Load(args[1])
+			runB, _, err := st.Load(args[1])
 			if err != nil {
 				return 1, err
 			}
-
-			_ = analysisA
-			_ = analysisB
 
 			compAnalysis := analyze.CompareAnalysis(runA, runB)
 

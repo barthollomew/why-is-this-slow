@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/barthollomew/why-is-this-slow/internal/analyze"
 	"github.com/barthollomew/why-is-this-slow/internal/output"
@@ -61,9 +60,4 @@ func NewRunCommand(st *store.Store, stdout io.Writer) *Command {
 			return res.ExitCode, nil
 		},
 	}
-}
-
-// FormatArgs rebuilds a friendly command string for display.
-func FormatArgs(args []string) string {
-	return strings.Join(args, " ")
 }

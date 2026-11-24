@@ -25,7 +25,6 @@ type Options struct {
 	Repeat  int
 }
 
-// execute runs the command n times and captures timing and usage.
 func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 	if len(opts.Command) == 0 {
 		return model.RunResult{}, errors.New("no command provided")
@@ -40,8 +39,6 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 	var signal string
 	var maxRSS int64
 	var maxRSSUnit string
-	var wallForAggregate float64
-	var cpuForAggregate float64
 
 	cwd := opts.CWD
 	if cwd == "" {
@@ -65,6 +62,7 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 		if tail != "" {
 			stderrTail = tail
 		}
+		// Keep the last non-zero exit across repeat runs so failures surface.
 		if sample.ExitCode != 0 {
 			exitCode = sample.ExitCode
 			signal = sample.Signal
@@ -75,15 +73,14 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 		} else if maxRSSUnit == "" {
 			maxRSSUnit = sample.MaxRSSUnit
 		}
-		wallForAggregate = sample.WallMS
-		cpuForAggregate = sample.CPURatio
 	}
 
-	medianWall := stats.Median(getWall(samples))
-	p90Wall := stats.Percentile(getWall(samples), 90)
-	medianCPU := stats.Median(getCPU(samples))
-	userMed := stats.Median(getUser(samples))
-	sysMed := stats.Median(getSys(samples))
+	walls := sampleField(samples, func(s model.Sample) float64 { return s.WallMS })
+	medianWall := stats.Median(walls)
+	p90Wall := stats.Percentile(walls, 90)
+	medianCPU := stats.Median(sampleField(samples, func(s model.Sample) float64 { return s.CPURatio }))
+	userMed := stats.Median(sampleField(samples, func(s model.Sample) float64 { return s.UserMS }))
+	sysMed := stats.Median(sampleField(samples, func(s model.Sample) float64 { return s.SysMS }))
 
 	run := model.RunResult{
 		ID:         newRunID(),
@@ -116,12 +113,6 @@ func Execute(ctx context.Context, opts Options) (model.RunResult, error) {
 	}
 
 	run.RawSamples = samples
-
-	// single run uses the actual wall time.
-	if opts.Repeat == 1 {
-		run.WallMS = wallForAggregate
-		run.CPURatio = cpuForAggregate
-	}
 
 	return run, nil
 }
@@ -199,34 +190,10 @@ func newRunID() string {
 	return fmt.Sprintf("%s-%s", ts, suffix)
 }
 
-func getWall(samples []model.Sample) []float64 {
-	out := make([]float64, 0, len(samples))
-	for _, s := range samples {
-		out = append(out, s.WallMS)
-	}
-	return out
-}
-
-func getCPU(samples []model.Sample) []float64 {
-	out := make([]float64, 0, len(samples))
-	for _, s := range samples {
-		out = append(out, s.CPURatio)
-	}
-	return out
-}
-
-func getUser(samples []model.Sample) []float64 {
-	out := make([]float64, 0, len(samples))
-	for _, s := range samples {
-		out = append(out, s.UserMS)
-	}
-	return out
-}
-
-func getSys(samples []model.Sample) []float64 {
-	out := make([]float64, 0, len(samples))
-	for _, s := range samples {
-		out = append(out, s.SysMS)
+func sampleField(samples []model.Sample, get func(model.Sample) float64) []float64 {
+	out := make([]float64, len(samples))
+	for i, s := range samples {
+		out[i] = get(s)
 	}
 	return out
 }
